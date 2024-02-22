@@ -2,6 +2,8 @@ import axios from 'axios';
 import bcryptjs from 'bcryptjs';
 import { getToken } from 'next-auth/jwt';
 import { sanitizeOBJ } from '@/utils/utils';
+import { getRecords } from '@/vidashy-sdk/dist/backend';
+import { filterBy, filterValue, filterComparison } from '@/utils/filters';
 
 async function updateRecord(userid, record) {
   const url = `${process.env.VIDASHY_URL}6d498a2a94a3/quoter/users`;
@@ -39,6 +41,36 @@ async function updateRecord(userid, record) {
     console.error(error);
     return null;
   }
+}
+
+async function verifyUsername(id, username) {
+  return await getRecords({
+    backend_url: process.env.VIDASHY_URL,
+    organization: process.env.VIDASHY_ORGANIZATION,
+    database: process.env.VIDASHY_DATABASE,
+    object: 'users',
+    api_key: process.env.VIDASHY_API_KEY,
+    params: {
+      filterBy: filterBy({ id, username }),
+      filterValue: filterValue({ id, username }),
+      filterComparison: filterComparison({ id: 'ne', username: 'eq' }),
+    },
+  });
+}
+
+async function verifyEmail(id, email) {
+  return await getRecords({
+    backend_url: process.env.VIDASHY_URL,
+    organization: process.env.VIDASHY_ORGANIZATION,
+    database: process.env.VIDASHY_DATABASE,
+    object: 'users',
+    api_key: process.env.VIDASHY_API_KEY,
+    params: {
+      filterBy: filterBy({ id, email }),
+      filterValue: filterValue({ id, email }),
+      filterComparison: filterComparison({ id: 'ne', username: 'eq' }),
+    },
+  });
 }
 
 export default async function handler(req, res) {
@@ -80,6 +112,22 @@ export default async function handler(req, res) {
     }
     if (!record.contact_phone || record.contact_phone === '') {
       validation.contact_phone = 'Field Required';
+    }
+
+    //VERIFY IF USERNAME EXISTS
+    if (record.email && record.email !== '') {
+      const user = await verifyUsername(record.id, record.username);
+      if (user && user.records && user.records.length > 0) {
+        validation.username = 'Username already exists';
+      }
+    }
+
+    //VERIFY IF EMAIL EXISTS
+    if (record.email && record.email !== '') {
+      const user = await verifyEmail(record.id, record.email);
+      if (user && user.records && user.records.length > 0) {
+        validation.email = 'Email already exists';
+      }
     }
 
     //EVALUATE IF VALIDATION IS NOT EMPTY

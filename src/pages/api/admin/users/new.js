@@ -2,6 +2,8 @@ import axios from 'axios';
 import bcryptjs from 'bcryptjs';
 import { getToken } from 'next-auth/jwt';
 import { sanitizeOBJ } from '@/utils/utils';
+import { getRecords } from '@/vidashy-sdk/dist/backend';
+import { filterBy, filterValue } from '@/utils/filters';
 
 function generateUUID() {
   let d = new Date().getTime();
@@ -51,6 +53,34 @@ async function createRecord(userid, record) {
   }
 }
 
+async function verifyUsername(username) {
+  return await getRecords({
+    backend_url: process.env.VIDASHY_URL,
+    organization: process.env.VIDASHY_ORGANIZATION,
+    database: process.env.VIDASHY_DATABASE,
+    object: 'users',
+    api_key: process.env.VIDASHY_API_KEY,
+    params: {
+      filterBy: filterBy({ username }),
+      filterValue: filterValue({ username }),
+    },
+  });
+}
+
+async function verifyEmail(email) {
+  return await getRecords({
+    backend_url: process.env.VIDASHY_URL,
+    organization: process.env.VIDASHY_ORGANIZATION,
+    database: process.env.VIDASHY_DATABASE,
+    object: 'users',
+    api_key: process.env.VIDASHY_API_KEY,
+    params: {
+      filterBy: filterBy({ email }),
+      filterValue: filterValue({ email }),
+    },
+  });
+}
+
 export default async function handler(req, res) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
@@ -93,6 +123,22 @@ export default async function handler(req, res) {
     }
     if (!record.contact_phone || record.contact_phone === '') {
       validation.contact_phone = 'Field Required';
+    }
+
+    //VERIFY IF USERNAME EXISTS
+    if (record.email && record.email !== '') {
+      const user = await verifyUsername(record.username);
+      if (user && user.records && user.records.length > 0) {
+        validation.username = 'Username already exists';
+      }
+    }
+
+    //VERIFY IF EMAIL EXISTS
+    if (record.email && record.email !== '') {
+      const user = await verifyEmail(record.email);
+      if (user && user.records && user.records.length > 0) {
+        validation.email = 'Email already exists';
+      }
     }
 
     //EVALUATE IF VALIDATION IS NOT EMPTY

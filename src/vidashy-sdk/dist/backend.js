@@ -2,10 +2,10 @@ import axios from 'axios';
 
 const getURL = (options) => {
   const { backend_url, organization, database, object, params } = options;
-  const { filterBy, filterValue, page, pageSize } = params;
+  const { filterBy, filterValue, filterComparison, page, pageSize } = params;
   const filter =
     filterBy && filterValue
-      ? `&filterBy=${filterBy}&filterValue=${filterValue}`
+      ? `&filterBy=${filterBy}&filterValue=${filterValue}&filterComparison=${filterComparison}`
       : '';
   const pagination = page ? `&page=${page}` : '';
   const numrecords = pageSize ? `&pageSize=${pageSize}` : '';
@@ -15,6 +15,7 @@ const getURL = (options) => {
 const getRecords = async (options) => {
   const { api_key } = options;
   const url = getURL(options);
+  console.log('URL', url);
   try {
     const response = await axios({
       method: 'get',

@@ -14,6 +14,7 @@ import productModel from '@/models/productModel';
 import { toast } from 'react-toastify';
 import DetailProduct from '@/components/dashboard/products/DetailProduct';
 import MediaUpload from '@/components/dashboard/MediaUpload';
+import { shortUUID } from '@/utils/utils';
 
 async function getProducts(page = 1, pageSize = 5, status = 'all') {
   //SIMULATE SLOW CONNECTION
@@ -234,7 +235,7 @@ function ListProducts() {
               showProductDetail(record);
             }}
           >
-            {cellValue}
+            {shortUUID(cellValue)}
           </div>
         );
 
@@ -289,6 +290,7 @@ function ListProducts() {
           title="Detalle de Producto"
           onCloseModal={() => {
             onRecordChange(false);
+            setRecordModal(productModel);
           }}
           allowSave={recordChange}
           savingRecord={savingRecord}

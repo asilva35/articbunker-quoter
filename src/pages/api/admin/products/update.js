@@ -12,7 +12,6 @@ async function updateProduct(userid, product_request) {
       productSubtitle: product_request.productSubtitle,
       description: product_request.description,
       productImage: product_request.productImage,
-      status: product_request.status,
     });
 
     const response = await axios({
@@ -54,9 +53,6 @@ export default async function handler(req, res) {
     }
     if (!product_request.description || product_request.description === '') {
       validation.description = 'Field Required';
-    }
-    if (!product_request.status || product_request.status === '') {
-      validation.status = 'Field Required';
     }
     if (
       !product_request.productImage.src ||

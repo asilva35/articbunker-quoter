@@ -55,7 +55,10 @@ export default function MyComponent(props) {
     });
     return percentage;
   };
-  const image = `${product.productImage.src}?w=158&q=75`;
+  const image =
+    product && product.productImage && product.productImage.src
+      ? `${product.productImage.src}?w=158&q=75`
+      : '';
   return (
     <>
       <div className="PreviewComponent" ref={ref}>

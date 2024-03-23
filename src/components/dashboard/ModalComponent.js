@@ -23,6 +23,7 @@ export default function App(props) {
     children,
     onCloseModal,
     savingRecord,
+    labelButtonSave,
   } = props;
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
@@ -64,7 +65,7 @@ export default function App(props) {
                 <ModalBody ref={refModalBody}>{children}</ModalBody>
                 <ModalFooter>
                   <Button color="danger" variant="light" onPress={onClose}>
-                    Cerrar
+                    Close
                   </Button>
                   {showButtonSave && (
                     <Button
@@ -73,7 +74,7 @@ export default function App(props) {
                       disabled={!allowSave}
                       isLoading={savingRecord}
                     >
-                      Guardar
+                      {labelButtonSave || 'Save'}
                     </Button>
                   )}
                 </ModalFooter>

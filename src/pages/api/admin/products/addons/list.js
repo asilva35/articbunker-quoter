@@ -2,19 +2,43 @@ import { getRecords } from '@/vidashy-sdk/dist/backend';
 import { getToken } from 'next-auth/jwt';
 import { filterBy, filterValue } from '@/utils/filters';
 
-async function listRecords(page = 1, pageSize = 5) {
+async function listRecords(
+  page = 1,
+  pageSize = 5,
+  status = 'active',
+  search = ''
+) {
+  const params = {
+    page,
+    pageSize,
+    filter: {
+      status,
+    },
+  };
+  if (search) {
+    params.filter = {
+      and: [
+        { and: [{ status }] },
+        {
+          or: [
+            {
+              text: { regex: `.*${search}.*`, optionsRegex: 'i' },
+            },
+            { productName: { regex: `.*${search}.*`, optionsRegex: 'i' } },
+            { category: { regex: `.*${search}.*`, optionsRegex: 'i' } },
+          ],
+        },
+      ],
+    };
+  }
   return await getRecords({
     backend_url: process.env.VIDASHY_URL,
     organization: process.env.VIDASHY_ORGANIZATION,
     database: process.env.VIDASHY_DATABASE,
     object: 'addons',
     api_key: process.env.VIDASHY_API_KEY,
-    params: {
-      filterBy: '',
-      filterValue: '',
-      page,
-      pageSize,
-    },
+    v: '1.1',
+    params,
   });
 }
 
@@ -24,25 +48,25 @@ export default async function handler(req, res) {
 
     if (!token) return res.status(401).send({ message: 'Not authorized' });
 
-    const { page, pageSize } = req.query;
+    const { page, pageSize, status, search } = req.query;
     const { role } = token;
 
     if (role !== 'admin') {
       return res.status(401).send({ message: 'Not authorized' });
     }
 
-    const records = await listRecords(page, pageSize);
+    const data = await listRecords(page, pageSize, status, search);
 
-    if (!records || !records.records || records.records.length === 0)
-      return res.status(404).send({ records, message: 'Records Not found' });
+    if (!data || !data.records || data.records.length === 0)
+      return res.status(404).send({ data, message: 'Records Not found' });
 
     //REMOVE SENSIBLE DATA OF RECORDS
-    records.records.map((_record) => {
+    data.records.map((_record) => {
       delete _record._id;
       delete _record.updatedAt;
     });
 
-    res.status(200).json({ records });
+    res.status(200).json({ data });
   } catch (error) {
     console.error('Error getting token or session:', error);
   }

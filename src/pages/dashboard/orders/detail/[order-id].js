@@ -59,9 +59,10 @@ function DetailOrderScreen() {
             key: 1,
             id: _order.id,
             product: product ? product?.productName : '',
-            productImage: product
-              ? `${product?.productImage.src}?w=158&q=75`
-              : '',
+            productImage:
+              product && product.productImage && product.productImage.src
+                ? `${product?.productImage.src}?w=158&q=75`
+                : '',
             date: _order.createdAt,
             status: _order.status,
             data_contact,

@@ -6,16 +6,22 @@ export default function MyComponent(props) {
   const { theme, order } = props;
 
   const product = order.product;
-  const image = `${product.productImage.src}?w=158&q=75`;
+  //const image = `${product.productImage.src}?w=158&q=75`;
+  const image =
+    product && product.productImage && product.productImage.src
+      ? `${product.productImage.src}?w=158&q=75`
+      : '';
 
   return (
     <>
       <div className="OptionsCard">
         <div className="title">{product.productName}</div>
         <div className="subtitle">{product.productSubtitle}</div>
-        <div className="productImage">
-          <Image src={image} width={158} height={158} alt="" />
-        </div>
+        {image && (
+          <div className="productImage">
+            <Image src={image} width={158} height={158} alt="" />
+          </div>
+        )}
         <div className="text">Adicionales:</div>
         {order.addons.map((addon, index) => (
           <div className="OptionItem" key={index}>

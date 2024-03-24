@@ -20,7 +20,7 @@ function ListAddons() {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const urlGetRecords = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/list?status=active`;
   const urlNewRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/new`;
-  const urlUpdateRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/new`;
+  const urlUpdateRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/update`;
   const urlDeleteRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/delete?id={record_id}`;
 
   const [products, setProducts] = React.useState([]);

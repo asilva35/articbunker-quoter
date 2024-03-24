@@ -30,21 +30,20 @@ function ListAddons() {
     if (typeof window !== 'undefined') {
       const fetchRecords = async () => {
         const productsBD = await getProducts(1, 100, 'active');
-        console.log(productsBD);
         if (
           productsBD &&
           productsBD.data &&
           productsBD.data.records &&
           productsBD.data.records.length > 0
         ) {
-          setProducts(
-            productsBD.data.records.map((product, index) => {
-              return {
-                value: product.id,
-                label: product.productName,
-              };
-            })
-          );
+          const _products = [{ value: 'ALL_PRODUCTS', label: 'ALL PRODUCTS' }];
+          productsBD.data.records.map((product, index) => {
+            _products.push({
+              value: product.id,
+              label: product.productName,
+            });
+          });
+          setProducts(_products);
         } else {
           setProducts([]);
         }

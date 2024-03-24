@@ -67,7 +67,7 @@ function NewOrderScreen() {
     }
     if (name_event === 'option02') {
       localStorage.removeItem('ArcticBunker_draft_order');
-      setShowModal(false);
+      location.reload();
     }
   };
 

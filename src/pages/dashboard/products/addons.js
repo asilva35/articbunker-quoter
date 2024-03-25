@@ -1,124 +1,49 @@
 import Layout from '@/components/Layout';
 import Metaheader from '@/components/Metaheader';
-import TableComponent from '@/components/dashboard/TableComponent';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import React, { useContext, useEffect } from 'react';
 import BreadCrumbs from '@/components/dashboard/BreadCrumbs';
-import { Chip } from '@nextui-org/react';
-import { useRouter } from 'next/router';
-import { formatDate, capitalizeFirstLetter } from '@/utils/utils';
-import Image from 'next/image';
-import ModalComponent from '@/components/dashboard/ModalComponent';
 import addonModel from '@/models/addonModel';
-import { toast } from 'react-toastify';
-import DetailAddon from '@/components/dashboard/products/addons/DetailAddon';
-//import addons from '@/temp/addons.json';
+import MainScreenObject from '@/components/dashboard/MainScreenObject';
+import { Chip } from '@nextui-org/react';
+import Image from 'next/image';
+import { formatDate, capitalizeFirstLetter, shortUUID } from '@/utils/utils';
 
-async function getAddons(page = 1, pageSize = 5) {
-  //SIMULATE SLOW CONNECTION
-  //await new Promise((resolve) => setTimeout(resolve, 2000));
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/list?page=${page}&pageSize=${pageSize}`
-  );
-  return await res.json();
-}
-
-async function getProducts(page = 1, pageSize = 5, status = 'all') {
-  //SIMULATE SLOW CONNECTION
-  //await new Promise((resolve) => setTimeout(resolve, 2000));
+async function getProducts(page = 1, pageSize = 5, status = 'active') {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/list?page=${page}&pageSize=${pageSize}&status=${status}`
   );
   return await res.json();
 }
 
-function ListProducts() {
+function ListAddons() {
+  const { theme, toggleTheme } = useContext(ThemeContext);
+  const urlGetRecords = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/list?status=active`;
+  const urlNewRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/new`;
+  const urlUpdateRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/update`;
+  const urlDeleteRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/delete?id={record_id}`;
+
   const [products, setProducts] = React.useState([]);
-  const [addons, setAddons] = React.useState([]);
-  const [totalPages, setTotalPages] = React.useState(1);
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(5);
-  const [refreshTable, setRefreshTable] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
-  const router = useRouter();
-  const { status } = router.query;
-  const [showModalRecord, setShowModalRecord] = React.useState(0);
-  const [recordModal, setRecordModal] = React.useState(addonModel);
-  const [recordChange, setRecordChange] = React.useState(false);
-  const [savingRecord, setSavingRecord] = React.useState(false);
-  const [validation, setValidation] = React.useState({});
-
-  const onRecordChange = (value) => {
-    setRecordChange(value);
-  };
-
-  const onFieldChange = (field, value) => {
-    const newRecord = { ...recordModal };
-    newRecord[field.key] = value;
-    if (field.key === 'productID') {
-      const product = products.find((product) => product.value === value);
-      newRecord['productName'] = product.label;
-    }
-    setRecordModal(newRecord);
-    setRecordChange(true);
-  };
-
-  //FETCH ADDONS
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const fetchRecords = async () => {
-        setLoading(true);
-        const addonsBD = await getAddons(page, pageSize);
-
-        if (!addonsBD.records) {
-          setAddons([]);
-          setTotalPages(1);
-          setPage(1);
-          setLoading(false);
-          return;
-        }
-        const { totalPages, records } = addonsBD.records;
-        setAddons(
-          records.map((record, index) => {
-            return {
-              ...record,
-              key: index,
-              id: record.id,
-              text: record.text,
-              category: record.category,
-              percent: record.percent,
-              productID: record.productID,
-            };
-          })
-        );
-        setTotalPages(totalPages);
-        setPage(page);
-        setLoading(false);
-      };
-      fetchRecords(page, pageSize);
-    }
-  }, [page, pageSize, status, refreshTable]);
 
   //FETCH PRODUCTS
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const fetchRecords = async () => {
-        const productsBD = await getProducts(1, 100, 'all');
-
+        const productsBD = await getProducts(1, 100, 'active');
         if (
           productsBD &&
-          productsBD.products &&
-          productsBD.products.records &&
-          productsBD.products.records.length > 0
+          productsBD.data &&
+          productsBD.data.records &&
+          productsBD.data.records.length > 0
         ) {
-          setProducts(
-            productsBD.products.records.map((product, index) => {
-              return {
-                value: product.id,
-                label: product.productName,
-              };
-            })
-          );
+          const _products = [{ value: 'ALL_PRODUCTS', label: 'ALL PRODUCTS' }];
+          productsBD.data.records.map((product, index) => {
+            _products.push({
+              value: product.id,
+              label: product.productName,
+            });
+          });
+          setProducts(_products);
         } else {
           setProducts([]);
         }
@@ -127,47 +52,7 @@ function ListProducts() {
     }
   }, []);
 
-  const { theme, toggleTheme } = useContext(ThemeContext);
-
-  const showProductDetail = (record) => {
-    setRecordModal(record);
-    setShowModalRecord((currCount) => currCount + 1);
-  };
-
-  const createRecord = () => {
-    setRecordModal(addonModel);
-    setShowModalRecord((currCount) => currCount + 1);
-  };
-
-  const saveRecord = async () => {
-    if (savingRecord) return;
-    setSavingRecord(true);
-    const url = recordModal.id
-      ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/update`
-      : `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/addons/new`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ record: recordModal }),
-    });
-    if (response.ok) {
-      toast.success('Registro Guardado con éxito');
-      setShowModalRecord(0);
-      setRefreshTable((currCount) => currCount + 1);
-      setSavingRecord(false);
-      setValidation({});
-    } else {
-      const { message, validation } = await response.json();
-      if (validation) setValidation(validation);
-      //toast.error(message);
-      setSavingRecord(false);
-    }
-  };
-
-  const renderCell = React.useCallback((record, columnKey) => {
+  const renderCell = (record, columnKey, showRecordDetail, showModalDelete) => {
     const cellValue = record[columnKey];
     switch (columnKey) {
       case 'expand':
@@ -175,8 +60,9 @@ function ListProducts() {
           <div
             className="expand-cell"
             onClick={() => {
-              showProductDetail(record);
+              showRecordDetail(record);
             }}
+            style={{ cursor: 'pointer', width: '12px' }}
           >
             <Image
               src="/assets/images/icon-expand.svg"
@@ -186,30 +72,31 @@ function ListProducts() {
             />
           </div>
         );
-      case 'status':
-        const statusColorMap = {
-          disponible: 'success',
-          agotado: 'danger',
-        };
-        return (
-          <>
-            {cellValue ? (
-              <Chip
-                className="capitalize"
-                color={statusColorMap[record.status]}
-                size="sm"
-                variant="flat"
-              >
-                {capitalizeFirstLetter(cellValue)}
-              </Chip>
-            ) : (
-              <div></div>
-            )}
-          </>
-        );
 
       case 'date':
         return <div>{formatDate(cellValue)}</div>;
+
+      case 'delete':
+        return (
+          <div
+            style={{
+              textDecoration: 'none',
+              color: '#0070f0',
+              cursor: 'pointer',
+              width: '24px',
+            }}
+            onClick={() => {
+              showModalDelete(record);
+            }}
+          >
+            <Image
+              src="/assets/images/theme-light/icon-delete.svg"
+              width={24}
+              height={24}
+              alt="Borrar"
+            />
+          </div>
+        );
 
       case 'id':
         return (
@@ -220,17 +107,17 @@ function ListProducts() {
               cursor: 'pointer',
             }}
             onClick={() => {
-              showProductDetail(record);
+              showRecordDetail(record);
             }}
           >
-            {cellValue}
+            {shortUUID(cellValue)}
           </div>
         );
 
       default:
         return cellValue;
     }
-  }, []);
+  };
   return (
     <>
       <Metaheader title="Listado de Adicionales | Arctic Bunker" />
@@ -245,14 +132,17 @@ function ListProducts() {
             ],
           }}
         />
-        <TableComponent
-          data={{
-            title: 'Listado de Adicionales',
+        <MainScreenObject
+          urlGetRecords={urlGetRecords}
+          urlNewRecord={urlNewRecord}
+          urlUpdateRecord={urlUpdateRecord}
+          urlDeleteRecord={urlDeleteRecord}
+          tablePageSize={5}
+          model={addonModel}
+          tableComponentData={{
+            title: 'Lista de Adicionales',
             button: {
-              label: 'Nuevo Adicional',
-              callback: () => {
-                createRecord();
-              },
+              label: 'Nuevo adicional',
             },
             columns: [
               { key: 'expand', label: '' },
@@ -260,98 +150,75 @@ function ListProducts() {
               { key: 'text', label: 'Descripción' },
               { key: 'productName', label: 'Producto' },
               { key: 'category', label: 'Categoria' },
+              { key: 'delete', label: '' },
             ],
-            rows: addons,
-            pagination: {
-              total: totalPages,
-              initialPage: page,
-              isDisabled: loading,
-              onChange: (page) => {
-                setPage(page);
-              },
-            },
             renderCell,
           }}
-        />
-        <ModalComponent
-          show={showModalRecord}
-          onSave={saveRecord}
-          title="Detalle del Adicional"
-          onCloseModal={() => {
-            onRecordChange(false);
+          showSearch={true}
+          modalComponentData={{
+            title: 'Detalle del Adicional',
           }}
-          allowSave={recordChange}
-          savingRecord={savingRecord}
-        >
-          <DetailAddon
-            onRecordChange={(value) => {
-              onRecordChange(value);
-            }}
-            record={recordModal}
-            onFieldChange={(key, value) => {
-              onFieldChange(key, value);
-            }}
-            onChangeImage={(image) => {
-              showChangeImage(image);
-            }}
-            validation={validation}
-            schema={{
-              title: 'Detalle del Adicional',
-              fields: [
-                {
-                  key: 'id',
-                  label: 'ID',
-                  type: 'hidden',
+          schema={{
+            fields: [
+              {
+                key: 'id',
+                label: 'ID',
+                type: 'hidden',
+              },
+              {
+                key: 'text',
+                label: 'Nombre',
+                type: 'text',
+                isRequired: true,
+              },
+              {
+                key: 'help',
+                label: 'Descripción',
+                type: 'text',
+                isRequired: true,
+              },
+              {
+                key: 'percent',
+                label: '% Valor agregado',
+                type: 'text',
+                isRequired: true,
+              },
+              {
+                key: 'category',
+                label: 'Categoria',
+                type: 'select',
+                isRequired: true,
+                items: [
+                  { value: 'Seguridad', label: 'Seguridad' },
+                  { value: 'Energía', label: 'Energía' },
+                  {
+                    value: 'Protección Desastres',
+                    label: 'Protección Desastres',
+                  },
+                  { value: 'Refrigeración', label: 'Refrigeración' },
+                ],
+              },
+              {
+                key: 'productID',
+                label: 'Producto',
+                type: 'autocomplete',
+                isRequired: true,
+                placeholder: 'Elija un Producto',
+                items: products,
+                onChange: (key, value, record) => {
+                  const product = products.find(
+                    (product) => product.value === value
+                  );
+                  record['productName'] = product.label;
                 },
-                {
-                  key: 'text',
-                  label: 'Nombre',
-                  type: 'text',
-                  isRequired: true,
-                },
-                {
-                  key: 'help',
-                  label: 'Descripción',
-                  type: 'text',
-                  isRequired: true,
-                },
-                {
-                  key: 'percent',
-                  label: '% Valor agregado',
-                  type: 'text',
-                  isRequired: true,
-                },
-                {
-                  key: 'category',
-                  label: 'Categoria',
-                  type: 'select',
-                  isRequired: true,
-                  items: [
-                    { value: 'Seguridad', label: 'Seguridad' },
-                    { value: 'Energía', label: 'Energía' },
-                    {
-                      value: 'Protección Desastres',
-                      label: 'Protección Desastres',
-                    },
-                    { value: 'Refrigeración', label: 'Refrigeración' },
-                  ],
-                },
-                {
-                  key: 'productID',
-                  label: 'Producto',
-                  type: 'autocomplete',
-                  isRequired: true,
-                  placeholder: 'Elija un Producto',
-                  items: products,
-                },
-              ],
-            }}
-          />
-        </ModalComponent>
+              },
+            ],
+          }}
+        />
       </Layout>
     </>
   );
 }
 
-ListProducts.auth = { adminOnly: true };
-export default ListProducts;
+ListAddons.auth = { adminOnly: true };
+export default ListAddons;

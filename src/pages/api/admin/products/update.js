@@ -12,7 +12,6 @@ async function updateProduct(userid, product_request) {
       productSubtitle: product_request.productSubtitle,
       description: product_request.description,
       productImage: product_request.productImage,
-      status: product_request.status,
     });
 
     const response = await axios({
@@ -45,24 +44,15 @@ export default async function handler(req, res) {
       return res.status(401).send({ message: 'Not authorized' });
     }
 
-    const { product_request } = req.body;
+    const { record_request } = req.body;
 
     const validation = {};
 
-    if (!product_request.productName || product_request.productName === '') {
+    if (!record_request.productName || record_request.productName === '') {
       validation.productName = 'Field Required';
     }
-    if (!product_request.description || product_request.description === '') {
+    if (!record_request.description || record_request.description === '') {
       validation.description = 'Field Required';
-    }
-    if (!product_request.status || product_request.status === '') {
-      validation.status = 'Field Required';
-    }
-    if (
-      !product_request.productImage.src ||
-      product_request.productImage.src === ''
-    ) {
-      validation.productImage = 'Field Required';
     }
 
     //EVALUATE IF VALIDATION IS NOT EMPTY
@@ -73,7 +63,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const product = await updateProduct(userid, product_request);
+    const product = await updateProduct(userid, record_request);
 
     if (!product)
       return res

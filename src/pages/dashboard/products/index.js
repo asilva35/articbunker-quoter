@@ -1,184 +1,21 @@
 import Layout from '@/components/Layout';
 import Metaheader from '@/components/Metaheader';
-import TableComponent from '@/components/dashboard/TableComponent';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import React, { useContext, useEffect } from 'react';
 import BreadCrumbs from '@/components/dashboard/BreadCrumbs';
-import { Chip } from '@nextui-org/react';
-import Link from 'next/link';
-import { useRouter } from 'next/router';
-import { formatDate, capitalizeFirstLetter } from '@/utils/utils';
-import Image from 'next/image';
-import ModalComponent from '@/components/dashboard/ModalComponent';
 import productModel from '@/models/productModel';
-import { toast } from 'react-toastify';
-import DetailProduct from '@/components/dashboard/products/DetailProduct';
-import MediaUpload from '@/components/dashboard/MediaUpload';
-
-async function getProducts(page = 1, pageSize = 5, status = 'all') {
-  //SIMULATE SLOW CONNECTION
-  //await new Promise((resolve) => setTimeout(resolve, 2000));
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/list?page=${page}&pageSize=${pageSize}&status=${status}`
-  );
-  return await res.json();
-}
+import MainScreenObject from '@/components/dashboard/MainScreenObject';
+import Image from 'next/image';
+import { formatDate, capitalizeFirstLetter, shortUUID } from '@/utils/utils';
 
 function ListProducts() {
-  const [products, setProducts] = React.useState([]);
-  const [totalPages, setTotalPages] = React.useState(1);
-  const [page, setPage] = React.useState(1);
-  const [pageSize, setPageSize] = React.useState(5);
-  const [refreshTable, setRefreshTable] = React.useState(0);
-  const [loading, setLoading] = React.useState(false);
-  const router = useRouter();
-  const { status } = router.query;
-  const [showModalProductDetail, setShowModalProductDetail] = React.useState(0);
-  const [showModalChangeImage, setShowModalChangeImage] = React.useState(0);
-
-  const [recordModal, setRecordModal] = React.useState(productModel);
-  const [recordChange, setRecordChange] = React.useState(false);
-  const [allowUploadImage, setAllowUploadImage] = React.useState(false);
-  const [recordImage, setRecordImage] = React.useState(null);
-  const [savingRecord, setSavingRecord] = React.useState(false);
-  const [savingImage, setSavingImage] = React.useState(false);
-  const [validation, setValidation] = React.useState({});
-
-  const onRecordChange = (value) => {
-    setRecordChange(value);
-  };
-
-  const onFieldChange = (key, value) => {
-    const newRecord = { ...recordModal };
-    newRecord[key] = value;
-    setRecordModal(newRecord);
-    setRecordChange(true);
-  };
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const fetchOrders = async () => {
-        setLoading(true);
-        const productsBD = await getProducts(page, pageSize, status);
-
-        if (
-          productsBD &&
-          productsBD.products &&
-          productsBD.products.records &&
-          productsBD.products.records.length > 0
-        ) {
-          setProducts(
-            productsBD.products.records.map((product, index) => {
-              return {
-                ...product,
-                key: index,
-                id: product.id,
-                productName: product.productName,
-                date: product.createdAt,
-                status: product.status,
-              };
-            })
-          );
-          setTotalPages(productsBD.products.totalPages);
-          setPage(productsBD.products.page);
-        } else {
-          setProducts([]);
-          setTotalPages(1);
-          setPage(1);
-        }
-        setLoading(false);
-      };
-      fetchOrders(page, pageSize);
-    }
-  }, [page, pageSize, status, refreshTable]);
-
   const { theme, toggleTheme } = useContext(ThemeContext);
+  const urlGetRecords = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/list?status=active`;
+  const urlNewRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/new`;
+  const urlUpdateRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/update`;
+  const urlDeleteRecord = `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/delete?id={record_id}`;
 
-  const showProductDetail = (record) => {
-    setRecordModal(record);
-    setShowModalProductDetail((currCount) => currCount + 1);
-  };
-
-  const onNewProduct = () => {
-    setRecordModal(productModel);
-    setShowModalProductDetail((currCount) => currCount + 1);
-  };
-
-  const showChangeImage = (image) => {
-    setShowModalChangeImage((currCount) => currCount + 1);
-  };
-
-  const saveProduct = async () => {
-    if (savingRecord) return;
-    setSavingRecord(true);
-    const url = recordModal.id
-      ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/update`
-      : `${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/products/new`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ product_request: recordModal }),
-    });
-
-    if (response.ok) {
-      toast.success('Producto Guardado con éxito');
-      setShowModalProductDetail(0);
-      setRefreshTable((currCount) => currCount + 1);
-      setSavingRecord(false);
-    } else {
-      const { message, validation } = await response.json();
-      if (validation) setValidation(validation);
-      //toast.error(message);
-      setSavingRecord(false);
-    }
-  };
-
-  const uploadImage = async () => {
-    if (savingImage) return;
-    setSavingImage(true);
-    const body = new FormData();
-    body.append('file', recordImage);
-    const response = await fetch(
-      process.env.NEXT_PUBLIC_BASE_URL + '/api/admin/media/upload',
-      {
-        method: 'POST',
-        body,
-      }
-    );
-
-    if (response.ok) {
-      const { url, fields, mediaKey, urlMedia } = await response.json();
-      const formData = new FormData();
-      Object.entries(fields).forEach(([key, value]) => {
-        formData.append(key, value);
-      });
-      formData.append('file', recordImage);
-
-      const uploadResponse = await fetch(url, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (uploadResponse.ok) {
-        //toast.success('Imágen Guardada con éxito');
-        const newRecord = { ...recordModal };
-        newRecord.productImage.src = urlMedia;
-        setRecordModal(newRecord);
-        setRecordChange(true);
-      } else {
-        toast.error('La imágen no se pudo guardar');
-      }
-      setShowModalChangeImage(0);
-      setSavingImage(false);
-    } else {
-      setSavingImage(false);
-    }
-  };
-
-  const renderCell = React.useCallback((record, columnKey) => {
+  const renderCell = (record, columnKey, showRecordDetail, showModalDelete) => {
     const cellValue = record[columnKey];
     switch (columnKey) {
       case 'expand':
@@ -186,8 +23,9 @@ function ListProducts() {
           <div
             className="expand-cell"
             onClick={() => {
-              showProductDetail(record);
+              showRecordDetail(record);
             }}
+            style={{ cursor: 'pointer', width: '12px' }}
           >
             <Image
               src="/assets/images/icon-expand.svg"
@@ -197,30 +35,31 @@ function ListProducts() {
             />
           </div>
         );
-      case 'status':
-        const statusColorMap = {
-          disponible: 'success',
-          agotado: 'danger',
-        };
-        return (
-          <>
-            {cellValue ? (
-              <Chip
-                className="capitalize"
-                color={statusColorMap[record.status]}
-                size="sm"
-                variant="flat"
-              >
-                {capitalizeFirstLetter(cellValue)}
-              </Chip>
-            ) : (
-              <div></div>
-            )}
-          </>
-        );
 
       case 'date':
         return <div>{formatDate(cellValue)}</div>;
+
+      case 'delete':
+        return (
+          <div
+            style={{
+              textDecoration: 'none',
+              color: '#0070f0',
+              cursor: 'pointer',
+              width: '24px',
+            }}
+            onClick={() => {
+              showModalDelete(record);
+            }}
+          >
+            <Image
+              src="/assets/images/theme-light/icon-delete.svg"
+              width={24}
+              height={24}
+              alt="Borrar"
+            />
+          </div>
+        );
 
       case 'id':
         return (
@@ -231,17 +70,17 @@ function ListProducts() {
               cursor: 'pointer',
             }}
             onClick={() => {
-              showProductDetail(record);
+              showRecordDetail(record);
             }}
           >
-            {cellValue}
+            {shortUUID(cellValue)}
           </div>
         );
 
       default:
         return cellValue;
     }
-  }, []);
+  };
   return (
     <>
       <Metaheader title="Listado de Productos | Arctic Bunker" />
@@ -255,113 +94,59 @@ function ListProducts() {
             ],
           }}
         />
-        <TableComponent
-          data={{
-            title: 'Listado de Productos',
+        <MainScreenObject
+          urlGetRecords={urlGetRecords}
+          urlNewRecord={urlNewRecord}
+          urlUpdateRecord={urlUpdateRecord}
+          urlDeleteRecord={urlDeleteRecord}
+          tablePageSize={5}
+          model={productModel}
+          tableComponentData={{
+            title: 'Lista de Productos',
             button: {
-              label: 'Nuevo Producto',
-              callback: () => {
-                onNewProduct();
-              },
+              label: 'Nuevo producto',
             },
             columns: [
               { key: 'expand', label: '' },
               { key: 'id', label: 'Product ID' },
               { key: 'productName', label: 'Producto' },
               { key: 'date', label: 'Fecha' },
-              { key: 'status', label: 'Status' },
+              { key: 'delete', label: '' },
             ],
-            rows: products,
-            pagination: {
-              total: totalPages,
-              initialPage: page,
-              isDisabled: loading,
-              onChange: (page) => {
-                setPage(page);
-              },
-            },
             renderCell,
           }}
+          showSearch={true}
+          modalComponentData={{
+            title: 'Detalle de Producto',
+          }}
+          schema={{
+            fields: [
+              {
+                key: 'id',
+                label: 'Product ID',
+                type: 'hidden',
+              },
+              {
+                key: 'productName',
+                label: 'Nombre del Producto',
+                type: 'text',
+                isRequired: true,
+              },
+              {
+                key: 'description',
+                label: 'Descripción',
+                type: 'text',
+                isRequired: true,
+              },
+              {
+                key: 'productImage',
+                label: 'Imágen',
+                type: 'image',
+                preview: true,
+              },
+            ],
+          }}
         />
-        <ModalComponent
-          show={showModalProductDetail}
-          onSave={saveProduct}
-          title="Detalle de Producto"
-          onCloseModal={() => {
-            onRecordChange(false);
-          }}
-          allowSave={recordChange}
-          savingRecord={savingRecord}
-        >
-          <DetailProduct
-            onRecordChange={(value) => {
-              onRecordChange(value);
-            }}
-            record={recordModal}
-            onFieldChange={(key, value) => {
-              onFieldChange(key, value);
-            }}
-            onChangeImage={(image) => {
-              showChangeImage(image);
-            }}
-            validation={validation}
-            schema={{
-              title: 'Detalle de Producto',
-              fields: [
-                {
-                  key: 'id',
-                  label: 'Product ID',
-                  type: 'hidden',
-                },
-                {
-                  key: 'productName',
-                  label: 'Nombre del Producto',
-                  type: 'text',
-                  isRequired: true,
-                },
-                {
-                  key: 'description',
-                  label: 'Descripción',
-                  type: 'text',
-                  isRequired: true,
-                },
-                {
-                  key: 'productImage',
-                  label: 'Imágen',
-                  type: 'image',
-                  preview: true,
-                },
-                {
-                  key: 'status',
-                  label: 'Status',
-                  type: 'select',
-                  isRequired: true,
-                  items: [
-                    { value: 'disponible', label: 'Disponible' },
-                    { value: 'agotado', label: 'Agotado' },
-                  ],
-                },
-              ],
-            }}
-          />
-        </ModalComponent>
-        <ModalComponent
-          show={showModalChangeImage}
-          onSave={uploadImage}
-          title="Cambiar Imágen"
-          onCloseModal={() => {
-            setAllowUploadImage(false);
-          }}
-          allowSave={allowUploadImage}
-          savingRecord={savingImage}
-        >
-          <MediaUpload
-            onImageChange={(image) => {
-              setRecordImage(image);
-              setAllowUploadImage(true);
-            }}
-          />
-        </ModalComponent>
       </Layout>
     </>
   );

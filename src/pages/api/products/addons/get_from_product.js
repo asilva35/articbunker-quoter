@@ -1,36 +1,17 @@
 import { getRecords } from '@/vidashy-sdk/dist/backend';
 import { getToken } from 'next-auth/jwt';
-import { filterBy, filterValue } from '@/utils/filters';
 
-async function listRecords(
-  page = 1,
-  pageSize = 5,
-  status = 'active',
-  search = ''
-) {
+async function listRecords(productid) {
   const params = {
-    page,
-    pageSize,
+    page: 1,
+    pageSize: 100,
     filter: {
-      status,
+      or: [
+        { productID: productid, status: 'active' },
+        { productID: 'ALL_PRODUCTS', status: 'active' },
+      ],
     },
   };
-  if (search) {
-    params.filter = {
-      and: [
-        { and: [{ status }] },
-        {
-          or: [
-            {
-              text: { regex: `.*${search}.*`, optionsRegex: 'i' },
-            },
-            { productName: { regex: `.*${search}.*`, optionsRegex: 'i' } },
-            { category: { regex: `.*${search}.*`, optionsRegex: 'i' } },
-          ],
-        },
-      ],
-    };
-  }
   return await getRecords({
     backend_url: process.env.VIDASHY_URL,
     organization: process.env.VIDASHY_ORGANIZATION,
@@ -48,14 +29,10 @@ export default async function handler(req, res) {
 
     if (!token) return res.status(401).send({ message: 'Not authorized' });
 
-    const { page, pageSize, status, search } = req.query;
+    const { productid } = req.query;
     const { role } = token;
 
-    if (role !== 'admin') {
-      return res.status(401).send({ message: 'Not authorized' });
-    }
-
-    const data = await listRecords(page, pageSize, status, search);
+    const data = await listRecords(productid);
 
     if (!data || !data.records || data.records.length === 0)
       return res.status(404).send({ data, message: 'Records Not found' });

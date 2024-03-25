@@ -32,16 +32,18 @@ export default function MyComponent(props) {
   //   const checkPositionScroll = () => {
   //     console.log(window.pageYOffset, initialPosition);
   //     if (window.pageYOffset > initialPosition) {
-  //       ref.current.classList.add('sticky');
+  //       ref.current.style.position = 'fixed';
+  //       ref.current.style.top = '0';
   //     } else {
-  //       ref.current.classList.remove('sticky');
+  //       ref.current.style.position = 'relative';
+  //       ref.current.style.top = '0';
   //     }
   //   };
   //   window.addEventListener('scroll', checkPositionScroll);
   //   return () => {
   //     window.removeEventListener('scroll', checkPositionScroll);
   //   };
-  // }, []);
+  // }, [ref]);
 
   const calcPercentage = (addon) => {
     let percentage = addon.defaultPercent;
@@ -55,7 +57,10 @@ export default function MyComponent(props) {
     });
     return percentage;
   };
-  const image = `${product.productImage.src}?w=158&q=75`;
+  const image =
+    product && product.productImage && product.productImage.src
+      ? `${product.productImage.src}?w=158&q=75`
+      : '';
   return (
     <>
       <div className="PreviewComponent" ref={ref}>
@@ -143,6 +148,7 @@ export default function MyComponent(props) {
         .PreviewComponent {
           padding-top: 40px;
           max-width: 447px;
+          position: fixed;
         }
         .PreviewComponent.sticky {
           position: fixed;

@@ -22,7 +22,7 @@ async function getProduct(productid) {
 }
 
 async function getAddons(productid) {
-  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/products/addons/list?productid=${productid}`;
+  const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/products/addons/get_from_product?productid=${productid}`;
   const res = await fetch(url);
   return await res.json();
 }
@@ -52,7 +52,7 @@ function CustomizeOrderScreen() {
 
         const addonsBD = await getAddons(productid);
 
-        const { records: recordsAddons } = addonsBD.records;
+        const { records: recordsAddons } = addonsBD.data;
 
         if (addonsBD || recordsAddons.length > 0) {
           recordsAddons.map((addon) => {

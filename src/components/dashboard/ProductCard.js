@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import * as React from 'react';
+import { shortText } from '@/utils/utils';
 
 export default function MyComponent(props) {
   const { theme, product } = props;
@@ -24,7 +25,7 @@ export default function MyComponent(props) {
         )}
         <div className="div-2">
           <div className="div-3">{product.productName}</div>
-          <div className="div-4">{product.description}</div>
+          <div className="div-4">{shortText(product.description)}</div>
           <div className="div-5">
             <Link
               href={`/dashboard/orders/new/customize/${product.id}`}

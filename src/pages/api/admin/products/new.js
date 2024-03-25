@@ -15,12 +15,15 @@ function generateUUID() {
   return uuid;
 }
 
-async function createProduct(userid, product_request) {
+async function createRecord(userid, record) {
   const url = `${process.env.VIDASHY_URL}6d498a2a94a3/quoter/products`;
   try {
-    const product_new = sanitizeOBJ({
+    const new_record = sanitizeOBJ({
       id: generateUUID(),
-      ...product_request,
+      productName: record.productName,
+      description: record.description,
+      productImage: record.productImage,
+      status: 'active',
     });
     const response = await axios({
       method: 'post',
@@ -28,12 +31,10 @@ async function createProduct(userid, product_request) {
       headers: {
         Authorization: `Bearer ${process.env.VIDASHY_API_KEY}`,
       },
-      data: product_new,
+      data: new_record,
     });
 
-    const product = response.data || null;
-
-    return product_new;
+    return response.data || null;
   } catch (error) {
     console.error(error);
     return null;
@@ -52,24 +53,15 @@ export default async function handler(req, res) {
       return res.status(401).send({ message: 'Not authorized' });
     }
 
-    const { product_request } = req.body;
+    const { record_request } = req.body;
 
     const validation = {};
 
-    if (!product_request.productName || product_request.productName === '') {
+    if (!record_request.productName || record_request.productName === '') {
       validation.productName = 'Field Required';
     }
-    if (!product_request.description || product_request.description === '') {
+    if (!record_request.description || record_request.description === '') {
       validation.description = 'Field Required';
-    }
-    if (!product_request.status || product_request.status === '') {
-      validation.status = 'Field Required';
-    }
-    if (
-      !product_request.productImage.src ||
-      product_request.productImage.src === ''
-    ) {
-      validation.productImage = 'Field Required';
     }
 
     //EVALUATE IF VALIDATION IS NOT EMPTY
@@ -80,7 +72,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const product = await createProduct(userid, product_request);
+    const product = await createRecord(userid, record_request);
 
     if (!product)
       return res

@@ -17,12 +17,17 @@ function generateUUID() {
 
 async function createRecord(userid, record) {
   const url = `${process.env.VIDASHY_URL}6d498a2a94a3/quoter/addons`;
-
   try {
     const new_record = sanitizeOBJ({
       id: generateUUID(),
       userid,
-      ...record,
+      text: record.text,
+      productName: record.productName,
+      productID: record.productID,
+      help: record.help,
+      percent: record.percent,
+      category: record.category,
+      status: 'active',
     });
     const response = await axios({
       method: 'post',
@@ -52,30 +57,29 @@ export default async function handler(req, res) {
       return res.status(401).send({ message: 'Not authorized' });
     }
 
-    const { record } = req.body;
+    const { record_request } = req.body;
 
     const validation = {};
-
-    if (!record.text || record.text === '') {
+    if (!record_request.text || record_request.text === '') {
       validation.text = 'Field Required';
     }
-    if (!record.productName || record.productName === '') {
+    if (!record_request.productName || record_request.productName === '') {
       validation.productName = 'Field Required';
     }
-    if (!record.help || record.help === '') {
+    if (!record_request.help || record_request.help === '') {
       validation.help = 'Field Required';
     }
-    if (!record.percent || record.percent === '') {
+    if (!record_request.percent || record_request.percent === '') {
       validation.percent = 'Field Required';
     }
-    if (record.percent && isNaN(Number.parseInt(record.percent))) {
+    if (
+      record_request.percent &&
+      isNaN(Number.parseInt(record_request.percent))
+    ) {
       validation.percent = 'This field must be a number';
     }
-    if (!record.category || record.category === '') {
+    if (!record_request.category || record_request.category === '') {
       validation.category = 'Field Required';
-    }
-    if (!record.productName || record.productName === '') {
-      validation.productName = 'Field Required';
     }
 
     //EVALUATE IF VALIDATION IS NOT EMPTY
@@ -86,7 +90,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await createRecord(userid, record);
+    const response = await createRecord(userid, record_request);
 
     if (!response)
       return res

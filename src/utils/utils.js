@@ -53,11 +53,17 @@ function shortUUID(uuid) {
   return `${uuid.substring(0, 5)}...${uuid.substring(uuid.length - 5)}`;
 }
 
+//FUNCTION FOR SHORT TEXT
+function shortText(text) {
+  return text.length < 120 ? text : `${text.substring(0, 120)}...`;
+}
+
 export {
   formatDate,
   formatDateToISOSM,
   capitalizeFirstLetter,
   shortUUID,
+  shortText,
   sanitizeOBJ,
   sanitize,
 };

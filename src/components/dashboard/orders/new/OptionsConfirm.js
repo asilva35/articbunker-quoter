@@ -77,8 +77,23 @@ export default function MyComponent(props) {
         .OptionItemTitleText {
           color: #222;
           letter-spacing: 0.15px;
-          font: 400 15px/160% Roboto, -apple-system, Roboto, Helvetica,
+          font: 400 12px/160% Roboto, -apple-system, Roboto, Helvetica,
             sans-serif;
+          margin: 5px 0;
+          position: relative;
+        }
+        .OptionItemTitleText::before {
+          content: '';
+          display: block;
+          position: absolute;
+          top: 50%;
+          left: -15px;
+          color: #222;
+          height: 5px;
+          width: 5px;
+          background: #222;
+          border-radius: 50%;
+          transform: translate(0, -50%);
         }
         .OptionItemBody {
           padding-left: 15px;

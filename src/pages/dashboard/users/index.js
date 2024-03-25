@@ -54,8 +54,6 @@ function ListUsers() {
 
         const { records, totalPages } = usersBD.data;
 
-        console.log('usersBD', usersBD);
-
         if (records && records.length > 0) {
           setUsers(
             records.map((user, index) => {

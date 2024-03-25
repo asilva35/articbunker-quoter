@@ -5,7 +5,6 @@ import React, { useContext, useEffect } from 'react';
 import BreadCrumbs from '@/components/dashboard/BreadCrumbs';
 import productModel from '@/models/productModel';
 import MainScreenObject from '@/components/dashboard/MainScreenObject';
-import { Chip } from '@nextui-org/react';
 import Image from 'next/image';
 import { formatDate, capitalizeFirstLetter, shortUUID } from '@/utils/utils';
 

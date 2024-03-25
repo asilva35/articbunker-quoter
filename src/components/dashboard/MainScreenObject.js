@@ -224,7 +224,7 @@ export default function MainScreenObject(props) {
         recordImage,
         300,
         300,
-        'JPEG',
+        recordImage.type === 'image/png' ? 'PNG' : 'JPEG',
         100,
         0,
         async (imageResized) => {

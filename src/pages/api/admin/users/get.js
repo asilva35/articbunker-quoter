@@ -1,22 +1,18 @@
 import { getRecords } from '@/vidashy-sdk/dist/backend';
 import { getToken } from 'next-auth/jwt';
+import { filterBy, filterValue } from '@/utils/filters';
 
-async function listRecords(productid) {
+async function listRecords(id) {
   const params = {
-    page: 1,
-    pageSize: 100,
     filter: {
-      or: [
-        { productID: productid, status: 'active' },
-        { productID: 'ALL_PRODUCTS', status: 'active' },
-      ],
+      id,
     },
   };
   return await getRecords({
     backend_url: process.env.VIDASHY_URL,
     organization: process.env.VIDASHY_ORGANIZATION,
     database: process.env.VIDASHY_DATABASE,
-    object: 'addons',
+    object: 'users',
     api_key: process.env.VIDASHY_API_KEY,
     v: '1.1',
     params,
@@ -27,23 +23,31 @@ export default async function handler(req, res) {
   try {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-    if (!token) return res.status(401).send({ message: 'Not authorized' });
+    if (!token)
+      return res.status(401).send({ data: {}, message: 'Not authorized' });
 
-    const { productid } = req.query;
+    const { id } = req.query;
     const { role } = token;
 
-    const data = await listRecords(productid);
+    if (role !== 'admin') {
+      return res.status(401).send({ data: {}, message: 'Not authorized' });
+    }
 
-    if (!data || !data.records || data.records.length === 0)
-      return res.status(404).send({ data, message: 'Records Not found' });
+    let records = await listRecords(id);
+
+    if (!records || !records.records || records.records.length === 0)
+      return res
+        .status(404)
+        .send({ data: records, message: 'Records Not found' });
 
     //REMOVE SENSIBLE DATA OF RECORDS
-    data.records.map((_record) => {
+    records.records.map((_record) => {
+      delete _record.password;
       delete _record._id;
       delete _record.updatedAt;
     });
 
-    res.status(200).json({ data });
+    res.status(200).json({ data: records });
   } catch (error) {
     console.error('Error getting token or session:', error);
   }

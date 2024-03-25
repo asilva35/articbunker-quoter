@@ -78,6 +78,7 @@ export default function OptionItemMenu(props) {
                 src="/assets/images/icon-add.svg"
                 width={16}
                 height={16}
+                className="IconAdd"
                 alt="Add"
               />
             </div>
@@ -91,13 +92,14 @@ export default function OptionItemMenu(props) {
           gap: 20px;
         }
         .OptionItemMenuInfo {
-          justify-content: space-between;
+          justify-content: flex-start;
           align-items: center;
           display: flex;
           gap: 4px;
           cursor: pointer;
+          width: 150px;
         }
-        .read-only{
+        .read-only {
           cursor: default;
         }
         .OptionItemMenuRemove,
@@ -106,7 +108,8 @@ export default function OptionItemMenu(props) {
           display: flex;
           justify-content: center;
           align-items: center;
-        }
+          width: 16px;
+          height: 16px;
         }
         .img-2 {
           aspect-ratio: 1;

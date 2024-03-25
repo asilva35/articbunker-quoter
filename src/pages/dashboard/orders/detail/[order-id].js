@@ -10,6 +10,7 @@ import Image from 'next/image';
 import ModalComponent from '@/components/dashboard/ModalComponent';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-toastify';
+import Link from 'next/link';
 
 async function getOrder(order_id) {
   //SIMULATE SLOW CONNECTION
@@ -192,7 +193,24 @@ function DetailOrderScreen() {
                   <div className="divider" />
                   {order.data_contact && (
                     <>
-                      <div className="clientTitle">Datos del Cliente</div>
+                      <div className="clientTitle">Creado por el Usuario: </div>
+                      <div className="clientData">
+                        <p>
+                          <Link
+                            href={`/dashboard/users/detail/${order.userid}`}
+                            target="_blank"
+                            className="link"
+                            style={{
+                              color: '#153d68',
+                              textDecoration: 'underline',
+                            }}
+                          >
+                            {order.userid}
+                          </Link>
+                        </p>
+                      </div>
+                      <div className="divider" />
+                      <div className="clientTitle">Datos de Entrega</div>
                       <div className="clientData">
                         <p>
                           <span>Nombre: </span>
@@ -428,6 +446,20 @@ function DetailOrderScreen() {
           margin-top: 8px;
           font: 400 12px/108% Roboto, -apple-system, Roboto, Helvetica,
             sans-serif;
+          position: relative;
+        }
+        .addonText::before {
+          content: '';
+          display: block;
+          position: absolute;
+          top: 50%;
+          left: -15px;
+          color: #222;
+          height: 5px;
+          width: 5px;
+          background: #222;
+          border-radius: 50%;
+          transform: translate(0, -50%);
         }
         .div-13 {
           color: #153d68;

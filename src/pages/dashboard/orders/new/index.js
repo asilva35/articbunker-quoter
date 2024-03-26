@@ -2,16 +2,30 @@ import Layout from '@/components/Layout';
 import Metaheader from '@/components/Metaheader';
 import BreadCrumbs from '@/components/dashboard/BreadCrumbs';
 import ProductList from '@/components/dashboard/ProductList';
-import { useContext, useEffect, useState } from 'react';
+import { useCallback, useContext, useEffect, useState } from 'react';
 import { ThemeContext } from '@/contexts/ThemeContext';
 import ModalWindow from '@/components/dashboard/ModalWindow';
 import { useRouter } from 'next/router';
+import { Input, Pagination } from '@nextui-org/react';
+import Image from 'next/image';
+import styles from '@/styles/dashboard/orders/NewOrderScreen.module.css';
 
-async function getProducts(page = 1, pageSize = 5, status = 'all') {
+// Debounce function
+function debounce(func, delay) {
+  let timeoutId = setTimeout(func, delay);
+  return function (...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(this, args);
+    }, delay);
+  };
+}
+
+async function getProducts(page = 1, pageSize = 5, search = '') {
   //SIMULATE SLOW CONNECTION
   //await new Promise((resolve) => setTimeout(resolve, 2000));
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/products/list?page=${page}&pageSize=${pageSize}&status=${status}`
+    `${process.env.NEXT_PUBLIC_BASE_URL}/api/products/list?page=${page}&pageSize=${pageSize}&search=${search}`
   );
   return await res.json();
 }
@@ -21,24 +35,27 @@ function NewOrderScreen() {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
   const [draftOrder, setDraftOrder] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const fetchProducts = async () => {
         setLoading(true);
-        const productsBD = await getProducts(page, pageSize, 'all');
+        const productsBD = await getProducts(currentPage, pageSize, search);
 
         if (!productsBD) {
           setProducts([]);
-          setPage(1);
           return;
         }
 
-        const { records } = productsBD.products;
+        const { records, totalPages } = productsBD.products;
+
+        setTotalPages(totalPages);
 
         setProducts(
           records.map((product, index) => {
@@ -49,9 +66,9 @@ function NewOrderScreen() {
         );
         setLoading(false);
       };
-      fetchProducts(page, pageSize);
+      fetchProducts();
     }
-  }, [page, pageSize]);
+  }, [currentPage, pageSize, search]);
 
   useEffect(() => {
     const draftOrder = localStorage.getItem('ArcticBunker_draft_order');
@@ -71,6 +88,14 @@ function NewOrderScreen() {
     }
   };
 
+  const debouncedOnChange = useCallback(
+    debounce((e) => {
+      if (!e) return;
+      setSearch(e.target.value);
+    }, 1000),
+    []
+  );
+
   return (
     <>
       <Metaheader title="Nueva Cotización | Arctic Bunker" />
@@ -85,7 +110,38 @@ function NewOrderScreen() {
             ],
           }}
         />
+        <div className={`${styles.search}`}>
+          <Input
+            type="text"
+            label="Search"
+            variant="bordered"
+            placeholder="Enter your search term..."
+            className="max-w-xs"
+            onChange={(e) => {
+              e.persist(); // React pools events, so we need to persist the event
+              debouncedOnChange(e);
+            }}
+            startContent={
+              <Image
+                src="/assets/images/icon-search.svg"
+                width={20}
+                height={20}
+                alt=""
+              />
+            }
+          />
+        </div>
         <ProductList theme={theme} products={products} isLoading={loading} />
+        <div className={`${styles.pagination}`}>
+          <Pagination
+            total={Number.parseInt(totalPages)}
+            initialPage={currentPage}
+            isDisabled={loading}
+            onChange={(page) => {
+              setCurrentPage(page);
+            }}
+          />
+        </div>
         {showModal && (
           <ModalWindow
             options={{
